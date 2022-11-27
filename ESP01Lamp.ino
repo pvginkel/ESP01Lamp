@@ -7,7 +7,9 @@
 
 #define TOGGLE_DIRECTION_MS 2000
 #define TURN_OFF_MS 1000
-#define STEP_MS 30
+
+#define LEVEL_MAX (255 * 3)
+#define STEP_MS 5
 
 #ifdef ESP8266
 #define IO_LED 2
@@ -21,6 +23,7 @@ typedef unsigned long time_t;
 
 bool isOn = false;
 bool wasOn = false;
+bool maxSignaled = false;
 int level = 255;
 Bounce bounce(IO_PB, 50);
 time_t lastDownChange = 0;
@@ -84,10 +87,17 @@ void loop() {
 			currentMillis - lastLevelChange >= STEP_MS
 		) {
 			if (goingUp) {
-				if (level < 255) {
+				if (level < LEVEL_MAX) {
 					DEBUG(F("Stepping to "), level);
 
 					level++;
+					setLevel(level);
+				}
+				else if (!maxSignaled) {
+					maxSignaled = true;
+
+					setLevel(0);
+					delay(200);
 					setLevel(level);
 				}
 			}
@@ -121,13 +131,14 @@ void loop() {
 			}
 
 			isDown = false;
+			maxSignaled = false;
 			lastDownChange = millis();
 		}
 	}
 }
 
 void setLevel(int level) {
-	float fraction = level / 255.0;
+	float fraction = level / ((float)(LEVEL_MAX));
 
 	// Use a parabolic function to make the level more natural.
 	fraction = fraction * fraction;
