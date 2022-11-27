@@ -6,8 +6,8 @@
 #include "Support.h"
 
 #define TOGGLE_DIRECTION_MS 2000
-#define TOGGLE_ON_MS 1000
-#define STEP_MS 300
+#define TURN_OFF_MS 1000
+#define STEP_MS 30
 
 #ifdef ESP8266
 #define IO_LED 2
@@ -20,6 +20,7 @@ typedef unsigned long time_t;
 #endif
 
 bool isOn = false;
+bool wasOn = false;
 int level = 255;
 Bounce bounce(IO_PB, 50);
 time_t lastDownChange = 0;
@@ -65,6 +66,8 @@ void loop() {
 			lastDownChange = currentMillis;
 			lastLevelChange = currentMillis;
 
+			wasOn = isOn;
+
 			if (!isOn) {
 				DEBUG(F("Turning on"));
 
@@ -73,7 +76,7 @@ void loop() {
 			}
 		}
 
-		if (currentMillis - lastLevelChange >= TOGGLE_DIRECTION_MS) {
+		if (currentMillis - lastLevelChange >= STEP_MS) {
 			if (goingUp) {
 				if (level < 255) {
 					DEBUG(F("Stepping to "), level);
@@ -99,16 +102,11 @@ void loop() {
 			DEBUG(F("End down"));
 
 			auto currentMillis = millis();
-			if (currentMillis - lastDownChange < TOGGLE_ON_MS) {
-				DEBUG(F("Toggling on"));
+			if (currentMillis - lastDownChange < TURN_OFF_MS && wasOn) {
+				DEBUG(F("Turning off"));
 
-				isOn = !isOn;
-				if (isOn) {
-					analogWrite(IO_LED, level);
-				}
-				else {
-					analogWrite(IO_LED, 0);
-				}
+				isOn = false;
+				analogWrite(IO_LED, 0);
 			}
 			else {
 				DEBUG(F("Writing current level "), level);
