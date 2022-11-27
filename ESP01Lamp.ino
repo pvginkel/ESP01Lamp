@@ -72,25 +72,31 @@ void loop() {
 				DEBUG(F("Turning on"));
 
 				isOn = true;
-				analogWrite(IO_LED, level);
+				if (level == 0) {
+					level = 5;
+				}
+				setLevel(level);
 			}
 		}
 
-		if (currentMillis - lastLevelChange >= STEP_MS) {
+		if (
+			currentMillis - lastDownChange >= TURN_OFF_MS &&
+			currentMillis - lastLevelChange >= STEP_MS
+		) {
 			if (goingUp) {
 				if (level < 255) {
 					DEBUG(F("Stepping to "), level);
 
 					level++;
-					analogWrite(IO_LED, level);
+					setLevel(level);
 				}
 			}
 			else {
-				if (level > 0) {
+				if (level > 1) {
 					DEBUG(F("Stepping to "), level);
 
 					level--;
-					analogWrite(IO_LED, level);
+					setLevel(level);
 				}
 			}
 
@@ -106,7 +112,7 @@ void loop() {
 				DEBUG(F("Turning off"));
 
 				isOn = false;
-				analogWrite(IO_LED, 0);
+				setLevel(0);
 			}
 			else {
 				DEBUG(F("Writing current level "), level);
@@ -118,4 +124,18 @@ void loop() {
 			lastDownChange = millis();
 		}
 	}
+}
+
+void setLevel(int level) {
+	float fraction = level / 255.0;
+
+	// Use a parabolic function to make the level more natural.
+	fraction = fraction * fraction;
+
+	int actualLevel = (int)(fraction * 255);
+	if (actualLevel == 0 && level > 0) {
+		actualLevel = 1;
+	}
+
+	analogWrite(IO_LED, actualLevel);
 }
