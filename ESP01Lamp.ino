@@ -12,8 +12,16 @@
 #define STEP_MS 5
 
 #ifdef ESP8266
-#define IO_LED 2
-#define IO_PB 3
+#define GPIO0 0
+#define GPIO1 1
+#define GPIO2 2
+#define GPIO3 3
+
+#define TX GPIO1
+#define RX GPIO3
+
+#define IO_LED GPIO0
+#define IO_PB RX
 #else
 #define IO_LED 6
 #define IO_PB 4
@@ -24,7 +32,7 @@ typedef unsigned long time_t;
 bool isOn = false;
 bool wasOn = false;
 bool maxSignaled = false;
-int level = 255;
+int level = LEVEL_MAX;
 Bounce bounce(IO_PB, 50);
 time_t lastDownChange = 0;
 time_t lastLevelChange = 0;
@@ -38,13 +46,22 @@ void setup() {
 
 #ifdef ESP8266
 	WiFi.mode(WIFI_OFF);
+
+	// Disable RX so that we can use it for the button.
+	Serial.begin(115200, SERIAL_8N1, SERIAL_TX_ONLY);
+#else
+	Serial.begin(115200);
 #endif
 
+	EEPROM.begin(2);
 	EEPROM.get(0, level);
+	if (level < 0 || level > LEVEL_MAX) {
+		level = LEVEL_MAX;
+	}
+
+	setLevel(0);
 
 	DEBUG(F("Initializing with level "), level);
-
-	Serial.begin(115200);
 }
 
 void loop() {
@@ -127,7 +144,12 @@ void loop() {
 			else {
 				DEBUG(F("Writing current level "), level);
 
-				EEPROM.put(0, level);
+				int oldLevel;
+				EEPROM.get(0, oldLevel);
+				if (level != oldLevel) {
+					EEPROM.put(0, level);
+					EEPROM.commit();
+				}
 			}
 
 			isDown = false;
@@ -147,6 +169,10 @@ void setLevel(int level) {
 	if (actualLevel == 0 && level > 0) {
 		actualLevel = 1;
 	}
+
+#ifdef ESP8266
+	actualLevel = 255 - actualLevel;
+#endif
 
 	analogWrite(IO_LED, actualLevel);
 }
