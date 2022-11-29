@@ -11,6 +11,8 @@
 #define LEVEL_MAX (255 * 3)
 #define STEP_MS 5
 
+#define IS_MOSFET true
+
 #ifdef ESP8266
 #define GPIO0 0
 #define GPIO1 1
@@ -22,9 +24,13 @@
 
 #define IO_LED GPIO0
 #define IO_PB RX
+
+#define INVERT (!IS_MOSFET)
 #else
 #define IO_LED 6
 #define IO_PB 4
+
+#define INVERT false
 
 typedef unsigned long time_t;
 #endif
@@ -170,9 +176,9 @@ void setLevel(int level) {
 		actualLevel = 1;
 	}
 
-#ifdef ESP8266
+#if INVERT
 	actualLevel = 255 - actualLevel;
 #endif
-
+	 
 	analogWrite(IO_LED, actualLevel);
 }
