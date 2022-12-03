@@ -8,10 +8,18 @@
 #define TOGGLE_DIRECTION_MS 2000
 #define TURN_OFF_MS 600
 
-#define LEVEL_MAX (255 * 3)
-#define STEP_MS 5
 
 #define IS_MOSFET true
+#define SCALE false
+
+#if SCALE
+// Increase resolution because of scaling.
+#define LEVEL_MAX (255 * 3)
+#define STEP_MS 5
+#else
+#define LEVEL_MAX 255
+#define STEP_MS 15
+#endif
 
 #ifdef ESP8266
 #define GPIO0 0
@@ -173,6 +181,7 @@ void loop() {
 }
 
 void setLevel(int level) {
+#if SCALE
 	float fraction = level / ((float)(LEVEL_MAX));
 
 	// Use a parabolic function to make the level more natural.
@@ -182,6 +191,9 @@ void setLevel(int level) {
 	if (actualLevel == 0 && level > 0) {
 		actualLevel = 1;
 	}
+#else
+	int actualLevel = level;
+#endif
 
 #if INVERT
 	actualLevel = 255 - actualLevel;
