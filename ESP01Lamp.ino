@@ -44,6 +44,9 @@ time_t lastDownChange = 0;
 time_t lastLevelChange = 0;
 bool isDown = false;
 bool goingUp = true;
+bool haveDimmed = false;
+
+static void setLevel(int level);
 
 void setup() {
 	while (!Serial);
@@ -79,7 +82,7 @@ void loop() {
 		if (!isDown) {
 			DEBUG(F("Staring down"));
 
-			if (currentMillis - lastDownChange < TOGGLE_DIRECTION_MS) {
+			if (currentMillis - lastDownChange < TOGGLE_DIRECTION_MS && haveDimmed) {
 				goingUp = !goingUp;
 
 				DEBUG(F("Toggling going up to "), goingUp);
@@ -89,15 +92,17 @@ void loop() {
 			}
 
 			isDown = true;
+			haveDimmed = false;
 			lastDownChange = currentMillis;
 			lastLevelChange = currentMillis;
-
 			wasOn = isOn;
 
 			if (!isOn) {
 				DEBUG(F("Turning on"));
 
 				isOn = true;
+				goingUp = true;
+
 				if (level == 0) {
 					level = 5;
 				}
@@ -109,6 +114,8 @@ void loop() {
 			currentMillis - lastDownChange >= TURN_OFF_MS &&
 			currentMillis - lastLevelChange >= STEP_MS
 		) {
+			haveDimmed = true;
+
 			if (goingUp) {
 				if (level < LEVEL_MAX) {
 					DEBUG(F("Stepping to "), level);
