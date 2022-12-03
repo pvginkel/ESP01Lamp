@@ -66,6 +66,12 @@ void setup() {
 
 	// Disable RX so that we can use it for the button.
 	Serial.begin(115200, SERIAL_8N1, SERIAL_TX_ONLY);
+
+	// Turn off the blue led.
+	pinMode(GPIO2, OUTPUT);
+	// GPIO2 has a pull up resistor to Vcc, so we need to pull it
+	// high to turn off the led
+	digitalWrite(GPIO2, HIGH);
 #else
 	Serial.begin(115200);
 #endif
