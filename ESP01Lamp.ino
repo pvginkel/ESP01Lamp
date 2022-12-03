@@ -6,7 +6,7 @@
 #include "Support.h"
 
 #define TOGGLE_DIRECTION_MS 2000
-#define TURN_OFF_MS 1000
+#define TURN_OFF_MS 600
 
 #define LEVEL_MAX (255 * 3)
 #define STEP_MS 5
